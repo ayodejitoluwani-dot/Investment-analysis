@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signal Desk — Investment Signals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --page:#0d0d0d; --surface:#1a1a19; --surface-2:#222220; --line:#2c2c2a; --axis:#383835;
+  --ink:#f0efec; --ink-2:#c3c2b7; --muted:#898781;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s7:#9085e9;
+  --good:#0ca30c; --good-ink:#3fcf3f; --warn:#fab219; --bad:#d03b3b; --bad-ink:#ff7a7a;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 Inter,system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+a{color:var(--s1)}
+header{display:flex;align-items:center;gap:16px;padding:14px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--page);z-index:5}
+header h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.01em}
+header h1 span{color:var(--muted);font-weight:500}
+header .grow{flex:1}
+.status{color:var(--muted);font-size:12.5px}
+.btn{background:var(--surface-2);border:1px solid var(--axis);border-radius:8px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--s1);border-color:var(--s1);color:#fff}
+.btn.small{padding:4px 9px;font-size:12.5px}
+.layout{display:grid;grid-template-columns:270px 1fr;min-height:calc(100vh - 58px)}
+aside{border-right:1px solid var(--line);padding:14px 10px;overflow:auto}
+.group{margin-bottom:14px}
+.group h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:6px 10px;font-weight:600}
+.asset{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer}
+.asset:hover{background:var(--surface)}
+.asset.active{background:var(--surface-2)}
+.asset .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asset .ch{font-size:12px}
+.up{color:var(--good-ink)} .down{color:var(--bad-ink)} .flat{color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--axis)}
+main{padding:20px 24px;overflow:auto}
+.tabs{display:flex;gap:6px;margin-bottom:16px}
+.tab{padding:6px 12px;border-radius:999px;border:1px solid var(--axis);cursor:pointer;background:transparent}
+.tab.on{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.tile .lbl{color:var(--muted);font-size:12px;margin-bottom:4px}
+.tile .val{font-size:22px;font-weight:600;letter-spacing:-.01em}
+.tile .sub{color:var(--ink-2);font-size:12px;margin-top:2px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-weight:600;font-size:13px}
+.badge.bull{background:rgba(12,163,12,.18);color:var(--good-ink)}
+.badge.bear{background:rgba(208,59,59,.2);color:var(--bad-ink)}
+.badge.neu{background:rgba(137,135,129,.18);color:var(--ink-2)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-top:14px}
+h2{font-size:15px;margin:0 0 4px}
+.hint{color:var(--muted);font-size:12.5px}
+.chartwrap{position:relative;height:340px;margin-top:8px}
+ul.why{margin:8px 0 0;padding-left:18px} ul.why li{margin:5px 0;color:var(--ink-2)}
+.news{list-style:none;margin:8px 0 0;padding:0;max-height:420px;overflow:auto}
+.news li{padding:9px 0;border-top:1px solid var(--line);display:flex;gap:10px}
+.news li:first-child{border-top:0}
+.news .s{flex:none;width:44px;text-align:right;font-size:12px;padding-top:2px}
+.news a{color:var(--ink);text-decoration:none} .news a:hover{text-decoration:underline}
+.news .meta{color:var(--muted);font-size:11.5px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-size:12px}
+td.num,th.num{text-align:right}
+tbody tr{cursor:pointer} tbody tr:hover{background:var(--surface-2)}
+.ind td{cursor:default} .ind tr:hover{background:none}
+.meter{height:6px;border-radius:3px;background:var(--line);position:relative;margin-top:8px}
+.meter i{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;background:var(--ink)}
+.meter b{position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--muted)}
+.empty{padding:30px;text-align:center;color:var(--ink-2)}
+.err{color:var(--bad-ink);font-size:12.5px;margin-top:6px}
+.disclaimer{color:var(--muted);font-size:12px;margin-top:22px;max-width:900px}
+dialog{background:var(--surface);color:var(--ink);border:1px solid var(--axis);border-radius:12px;padding:20px;width:min(560px,94vw)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog label{display:block;margin:12px 0 4px;color:var(--ink-2);font-size:13px}
+dialog input,dialog select,dialog textarea{width:100%;background:var(--page);border:1px solid var(--axis);border-radius:8px;padding:8px 10px}
+dialog textarea{height:160px;font-family:"JetBrains Mono",monospace;font-size:12px}
+dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.legend-note{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin-top:6px}
+.legend-note span::before{content:"";display:inline-block;width:14px;height:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+@media (max-width:1000px){.layout{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line)}.tiles{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Signal Desk <span>· investment signals</span></h1>
+  <div class="grow"></div>
+  <span class="status" id="status">Ready</span>
+  <button class="btn" id="btnRefresh">Refresh data</button>
+  <button class="btn" id="btnAdd">+ Asset</button>
+  <button class="btn" id="btnSettings">API keys</button>
+</header>
+<div class="layout">
+  <aside id="side"></aside>
+  <main>
+    <div class="tabs">
+      <button class="tab on" data-view="overview">Overview</button>
+      <button class="tab" data-view="detail">Asset detail</button>
+    </div>
+    <section id="view"></section>
+    <p class="disclaimer">Signal Desk shows statistical signals, not financial advice. The model is checked on past data it did not train on, and the hit rate it shows is from that test. Even a model that beat its baseline in the past can fail on new data, and news sentiment comes from headline wording only. Size positions as if every signal could be wrong.</p>
+  </main>
+</div>
+
+<dialog id="dlgSettings">
+  <h2>API keys</h2>
+  <p class="hint">Crypto, USD/NGN and news work without keys. The free keys below unlock stocks, ETFs, gold and Brent. Keys stay in this browser only.</p>
+  <label>Twelve Data key — US/global stocks, ETFs, gold (free: 800 calls/day) · <a href="https://twelvedata.com/pricing" target="_blank" rel="noopener">get key</a></label>
+  <input id="kTwelve" placeholder="e.g. 3f9c…">
+  <label>Alpha Vantage key — Brent crude + backup news (free: 25 calls/day) · <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener">get key</a></label>
+  <input id="kAV" placeholder="e.g. ABCD1234…">
+  <div class="row"><button class="btn" data-close>Cancel</button><button class="btn primary" id="saveKeys">Save</button></div>
+</dialog>
+
+<dialog id="dlgAdd">
+  <h2>Add an asset</h2>
+  <label>Group</label>
+  <select id="aGroup"><option>Nigerian stocks (NGX)</option><option>Oil &amp; FX</option><option>US / global</option><option>Crypto</option></select>
+  <label>Data source</label>
+  <select id="aSrc">
+    <option value="twelve">Twelve Data symbol (AAPL, VOO, EUR/USD, XAU/USD)</option>
+    <option value="coingecko">CoinGecko coin id (bitcoin, solana, ripple)</option>
+    <option value="fx">Currency vs USD (ngn, ghs, kes, eur)</option>
+    <option value="csv">My own CSV (NGX stocks, anything else)</option>
+  </select>
+  <label>Symbol / id</label><input id="aSym" placeholder="NVDA">
+  <label>Display name</label><input id="aName" placeholder="Nvidia">
+  <label>News search words (use quotes for phrases)</label><input id="aNews" placeholder='"Nvidia" OR "NVDA"'>
+  <div class="row"><button class="btn" data-close>Cancel</button><button class="btn primary" id="saveAsset">Add</button></div>
+</dialog>
+
+<dialog id="dlgCSV">
+  <h2 id="csvTitle">Import price history</h2>
+  <p class="hint">Paste or upload a CSV with a date column and a close/price column. Exports from NGX, Investing.com, Stockanalysis or African Markets all work. Day-first dates (10/11/2026) are assumed unless the file shows otherwise.</p>
+  <input type="file" id="csvFile" accept=".csv,.txt">
+  <label>…or paste CSV</label><textarea id="csvText" placeholder="Date,Close&#10;2026-11-10,512.30&#10;2026-11-11,515.00"></textarea>
+  <div class="err" id="csvErr"></div>
+  <div class="row"><button class="btn" data-close>Cancel</button><button class="btn primary" id="saveCSV">Import</button></div>
+</dialog>
+
+<!-- ===================== ENGINE (pure functions, no DOM) ===================== -->
+<script id="engine">
+const H = 5; // forecast horizon in sessions
+
+function sma(a,n){const o=new Array(a.length).fill(null);let s=0;for(let i=0;i<a.length;i++){s+=a[i];if(i>=n)s-=a[i-n];if(i>=n-1)o[i]=s/n;}return o;}
+function ema(a,n){const o=new Array(a.length).fill(null);const k=2/(n+1);let e=null;for(let i=0;i<a.length;i++){if(a[i]==null)continue;e=e==null?a[i]:a[i]*k+e*(1-k);o[i]=e;}return o;}
+function rsi(a,n=14){const o=new Array(a.length).fill(null);let g=0,l=0;for(let i=1;i<a.length;i++){const d=a[i]-a[i-1];const up=Math.max(d,0),dn=Math.max(-d,0);if(i<=n){g+=up;l+=dn;if(i===n){g/=n;l/=n;o[i]=l===0?100:100-100/(1+g/l);}}else{g=(g*(n-1)+up)/n;l=(l*(n-1)+dn)/n;o[i]=l===0?100:100-100/(1+g/l);}}return o;}
+function macdHist(a){const e12=ema(a,12),e26=ema(a,26);const m=a.map((_,i)=>e12[i]-e26[i]);const sig=ema(m,9);return m.map((v,i)=>v-sig[i]);}
+function stdev(x){const m=x.reduce((s,v)=>s+v,0)/x.length;return Math.sqrt(x.reduce((s,v)=>s+(v-m)**2,0)/Math.max(1,x.length-1));}
+function logRets(c){const r=[];for(let i=1;i<c.length;i++)r.push(Math.log(c[i]/c[i-1]));return r;}
+
+function indicators(c){
+  const s20=sma(c,20),s50=sma(c,50),r=rsi(c,14),mh=macdHist(c);
+  return {s20,s50,rsi:r,macdH:mh};
+}
+
+const FEATURE_NAMES=["1-day return","5-day return","20-day return","RSI","Gap to 20-day avg","Gap to 50-day avg","MACD histogram","20-day volatility"];
+function features(c,ind,i){
+  const lr=(k)=>Math.log(c[i]/c[i-k]);
+  const rets=[];for(let j=i-19;j<=i;j++)rets.push(Math.log(c[j]/c[j-1]));
+  return [lr(1),lr(5),lr(20),(ind.rsi[i]-50)/50,c[i]/ind.s20[i]-1,c[i]/ind.s50[i]-1,ind.macdH[i]/c[i],stdev(rets)];
+}
+
+function trainLogit(X,y,{iters=600,lr=0.1,l2=0.02}={}){
+  const d=X[0].length,n=X.length;
+  const mu=new Array(d).fill(0),sd=new Array(d).fill(0);
+  for(const x of X)for(let j=0;j<d;j++)mu[j]+=x[j]/n;
+  for(const x of X)for(let j=0;j<d;j++)sd[j]+=(x[j]-mu[j])**2/n;
+  for(let j=0;j<d;j++)sd[j]=Math.sqrt(sd[j])||1;
+  const Z=X.map(x=>x.map((v,j)=>(v-mu[j])/sd[j]));
+  let w=new Array(d).fill(0),b=0;
+  for(let it=0;it<iters;it++){
+    const gw=new Array(d).fill(0);let gb=0;
+    for(let k=0;k<n;k++){let z=b;for(let j=0;j<d;j++)z+=w[j]*Z[k][j];const p=1/(1+Math.exp(-z));const e=p-y[k];gb+=e;for(let j=0;j<d;j++)gw[j]+=e*Z[k][j];}
+    b-=lr*gb/n;for(let j=0;j<d;j++)w[j]-=lr*(gw[j]/n+l2*w[j]);
+  }
+  return {w,b,mu,sd,predict(x){let z=b;for(let j=0;j<d;j++)z+=w[j]*(x[j]-mu[j])/sd[j];return 1/(1+Math.exp(-z));},
+    contrib(x){return x.map((v,j)=>w[j]*(v-mu[j])/sd[j]);}};
+}
+
+// Full analysis of one close-price series (ascending). Returns null if too short.
+function analyze(dates,c){
+  const n=c.length;
+  if(n<60)return {ok:false,reason:`Only ${n} days of history — need at least 60.`};
+  const ind=indicators(c);
+  const start=50;
+  const rows=[];for(let i=start;i<n;i++)rows.push(i);
+  const labeled=rows.filter(i=>i+H<n);
+  const X=labeled.map(i=>features(c,ind,i)), y=labeled.map(i=>c[i+H]>c[i]?1:0);
+  const xNow=features(c,ind,n-1);
+  let bt={samples:0,hit:null,base:null,edge:null};
+  if(labeled.length>=120){
+    const cut=Math.floor(labeled.length*0.7);
+    const trX=X.slice(0,cut-H),trY=y.slice(0,cut-H); // gap of H avoids overlap leakage
+    const teX=X.slice(cut),teY=y.slice(cut);
+    const m=trainLogit(trX,trY);
+    let hit=0;teX.forEach((x,k)=>{if((m.predict(x)>0.5?1:0)===teY[k])hit++;});
+    const upRate=teY.reduce((s,v)=>s+v,0)/teY.length;
+    bt={samples:teY.length,hit:hit/teY.length,base:Math.max(upRate,1-upRate),upRate};
+    bt.edge=bt.hit-bt.base;
+  }
+  const model=trainLogit(X,y);
+  const pUp=model.predict(xNow);
+  const contrib=model.contrib(xNow).map((v,j)=>({name:FEATURE_NAMES[j],v})).sort((a,b)=>Math.abs(b.v)-Math.abs(a.v));
+  // projection cone
+  const lr=logRets(c);const recent=lr.slice(-20),longer=lr.slice(-60);
+  const sigma=stdev(recent);const mu=0.5*longer.reduce((s,v)=>s+v,0)/longer.length;
+  const last=c[n-1];
+  const cone=[];for(let h=1;h<=10;h++){const m=Math.log(last)+mu*h,w=1.2816*sigma*Math.sqrt(h);cone.push({h,mid:Math.exp(m),lo:Math.exp(m-w),hi:Math.exp(m+w)});}
+  const chg=(k)=>n>k?c[n-1]/c[n-1-k]-1:null;
+  return {ok:true,ind,pUp,bt,contrib,cone,sigma,mu,last,chg1:chg(1),chg5:chg(5),chg30:chg(30),
+    rsiNow:ind.rsi[n-1],s20:ind.s20[n-1],s50:ind.s50[n-1],macdNow:ind.macdH[n-1],annVol:sigma*Math.sqrt(252)};
+}
+
+// Combine model, trend and news into one score in [-100,100]
+function signal(a,news){
+  let conf=0.5;
+  if(a.bt.edge!=null){conf=a.bt.edge>0.03?1:a.bt.edge>0?0.6:0.25;}
+  const tech=(a.pUp-0.5)*2*conf;
+  const trend=Math.tanh((a.last/a.s50-1)*10);
+  const nws=news&&news.count?news.score:0;
+  const w=news&&news.count?[0.55,0.25,0.20]:[0.65,0.35,0];
+  const raw=w[0]*tech+w[1]*trend+w[2]*nws;
+  const score=Math.round(Math.max(-1,Math.min(1,raw*1.6))*100);
+  const label=score>=55?"Strong bullish":score>=20?"Bullish":score<=-55?"Strong bearish":score<=-20?"Bearish":"Neutral";
+  return {score,label,cls:score>=20?"bull":score<=-20?"bear":"neu",parts:{tech,trend,news:nws,conf}};
+}
+
+// ---- headline sentiment (finance lexicon) ----
+const POS="surge surges surged soar soars soared rally rallies rallied gain gains gained jump jumps jumped climb climbs climbed rise rises rising rose beat beats upgrade upgraded upgrades record bullish outperform strong stronger boost boosts boosted growth grow grows profit profits profitable rebound rebounds recover recovers recovery approval approved dividend expansion expands optimism optimistic upbeat high highs breakthrough wins win buy buyback inflows easing eases cut-rate stimulus".split(" ");
+const NEG="plunge plunges plunged fall falls fell drop drops dropped slump slumps slumped miss misses missed downgrade downgraded downgrades loss losses crash crashes crashed bearish weak weaker weakens decline declines declined selloff sell-off fear fears recession default defaults devaluation devalue tumble tumbles tumbled slide slides slid warning warns layoffs lawsuit probe fraud scandal hack hacked ban banned sanctions sanction shortage inflation outflows risk risks volatile turmoil lows low halt halted bankruptcy debt crisis cut cuts".split(" ");
+const POSSET=new Set(POS),NEGSET=new Set(NEG),NEGATORS=new Set(["not","no","never","without","despite"]);
+function headlineScore(t){
+  const w=(t||"").toLowerCase().replace(/[^a-z0-9\s-]/g," ").split(/\s+/).filter(Boolean);
+  let s=0,hits=0;
+  for(let i=0;i<w.length;i++){
+    let v=POSSET.has(w[i])?1:NEGSET.has(w[i])?-1:0;
+    if(!v)continue; if(NEGATORS.has(w[i-1])||NEGATORS.has(w[i-2]))v=-v; s+=v;hits++;
+  }
+  return hits?Math.max(-1,Math.min(1,s/Math.max(2,hits))):0;
+}
+function newsSummary(items){
+  if(!items||!items.length)return {count:0,score:0};
+  const now=Date.now();let sw=0,s=0,pos=0,neg=0;
+  for(const it of items){const age=(now-it.time)/864e5;const wt=Math.exp(-Math.max(0,age)/3);const v=headlineScore(it.title);s+=v*wt;sw+=wt;if(v>0.05)pos++;else if(v<-0.05)neg++;}
+  return {count:items.length,score:sw?s/sw:0,pos,neg};
+}
+
+// ---- CSV ----
+function splitCSVLine(line,d){const out=[];let cur="",q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(q&&line[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(ch===d&&!q){out.push(cur);cur="";}else cur+=ch;}out.push(cur);return out.map(s=>s.trim());}
+function parseNum(s){if(s==null)return NaN;s=String(s).replace(/[₦$€£,\s"]/g,"");if(/^\(.*\)$/.test(s))s="-"+s.slice(1,-1);return parseFloat(s);}
+const MONTHS={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+function iso(y,m,d){return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;}
+function parseCSV(text){
+  const lines=text.replace(/\r/g,"").split("\n").filter(l=>l.trim());
+  if(lines.length<2)throw new Error("The CSV needs a header row and at least one data row.");
+  const d=[",",";","\t"].sort((a,b)=>lines[0].split(b).length-lines[0].split(a).length)[0];
+  const head=splitCSVLine(lines[0],d).map(h=>h.toLowerCase().replace(/"/g,""));
+  const di=head.findIndex(h=>/date|time|day/.test(h));
+  let ci=head.findIndex(h=>/^(close|closing|close price|closing price|adj\.? close|last|last price)$/.test(h));
+  if(ci<0)ci=head.findIndex(h=>/close/.test(h)&&!/prev/.test(h));
+  if(ci<0)ci=head.findIndex(h=>/^price$|^value$/.test(h));
+  if(di<0||ci<0)throw new Error(`Couldn't find a date column and a close/price column in: ${head.join(", ")}`);
+  const raw=lines.slice(1).map(l=>splitCSVLine(l,d)).map(r=>({ds:(r[di]||"").replace(/"/g,"").trim(),v:parseNum(r[ci])})).filter(r=>r.ds&&isFinite(r.v));
+  // decide day-first vs month-first for numeric dates
+  let dayFirst=true;
+  const nums=raw.map(r=>r.ds.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/)).filter(Boolean);
+  if(nums.some(m=>+m[2]>12))dayFirst=false;
+  if(nums.some(m=>+m[1]>12))dayFirst=true;
+  const out=[];
+  for(const r of raw){
+    let s=r.ds,m,key=null;
+    if((m=s.match(/^(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})/)))key=iso(+m[1],+m[2]-1,+m[3]);
+    else if((m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/))){let y=+m[3];if(y<100)y+=2000;key=dayFirst?iso(y,+m[2]-1,+m[1]):iso(y,+m[1]-1,+m[2]);}
+    else if((m=s.match(/^(\d{1,2})[\s-]([A-Za-z]{3})[A-Za-z]*[\s,-]+(\d{2,4})$/))){let y=+m[3];if(y<100)y+=2000;key=iso(y,MONTHS[m[2].toLowerCase()],+m[1]);}
+    else if((m=s.match(/^([A-Za-z]{3})[A-Za-z]*\.?\s+(\d{1,2}),?\s+(\d{4})$/)))key=iso(+m[3],MONTHS[m[1].toLowerCase()],+m[2]);
+    if(key&&!key.includes("NaN"))out.push([key,r.v]);
+  }
+  if(out.length<2)throw new Error("Couldn't read the dates. Use a format like 2026-11-10, 10/11/2026 or Nov 10, 2026.");
+  const map=new Map(out);return [...map.entries()].sort((a,b)=>a[0]<b[0]?-1:1);
+}
+if(typeof module!=="undefined")module.exports={sma,ema,rsi,macdHist,analyze,signal,headlineScore,newsSummary,parseCSV,trainLogit};
+</script>
+
+<!-- ===================== APP ===================== -->
+<script>
+const store={get(k,d){try{const v=localStorage.getItem("sd_"+k);return v?JSON.parse(v):d;}catch(e){return d;}},set(k,v){try{localStorage.setItem("sd_"+k,JSON.stringify(v));}catch(e){}}};
+const today=()=>new Date().toISOString().slice(0,10);
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const GROUPS=["Nigerian stocks (NGX)","Oil & FX","US / global","Crypto"];
+const DEFAULT_WATCH=[
+  {id:"dangcem",group:GROUPS[0],src:"csv",sym:"DANGCEM",name:"Dangote Cement",news:'"Dangote Cement"',cur:"₦"},
+  {id:"mtnn",group:GROUPS[0],src:"csv",sym:"MTNN",name:"MTN Nigeria",news:'"MTN Nigeria"',cur:"₦"},
+  {id:"gtco",group:GROUPS[0],src:"csv",sym:"GTCO",name:"GTCO (Guaranty Trust)",news:'"GTCO" OR "Guaranty Trust Holding"',cur:"₦"},
+  {id:"zenith",group:GROUPS[0],src:"csv",sym:"ZENITHBANK",name:"Zenith Bank",news:'"Zenith Bank"',cur:"₦"},
+  {id:"seplat",group:GROUPS[0],src:"csv",sym:"SEPLAT",name:"Seplat Energy",news:'"Seplat"',cur:"₦"},
+  {id:"brent",group:GROUPS[1],src:"av_brent",sym:"BRENT",name:"Brent crude",news:'"Brent crude" OR "oil prices" OR OPEC',cur:"$"},
+  {id:"usdngn",group:GROUPS[1],src:"fx",sym:"ngn",name:"USD/NGN (naira per $)",news:'naira (dollar OR CBN OR exchange)',cur:"₦"},
+  {id:"gold",group:GROUPS[1],src:"twelve",sym:"XAU/USD",name:"Gold",news:'"gold price"',cur:"$"},
+  {id:"spy",group:GROUPS[2],src:"twelve",sym:"SPY",name:"S&P 500 (SPY)",news:'"S&P 500" OR "Wall Street" stocks',cur:"$"},
+  {id:"qqq",group:GROUPS[2],src:"twelve",sym:"QQQ",name:"Nasdaq 100 (QQQ)",news:'Nasdaq tech stocks',cur:"$"},
+  {id:"aapl",group:GROUPS[2],src:"twelve",sym:"AAPL",name:"Apple",news:'"Apple" (iPhone OR shares OR stock)',cur:"$"},
+  {id:"nvda",group:GROUPS[2],src:"twelve",sym:"NVDA",name:"Nvidia",news:'"Nvidia"',cur:"$"},
+  {id:"btc",group:GROUPS[3],src:"coingecko",sym:"bitcoin",name:"Bitcoin",news:'bitcoin',cur:"$"},
+  {id:"eth",group:GROUPS[3],src:"coingecko",sym:"ethereum",name:"Ethereum",news:'ethereum',cur:"$"},
+  {id:"sol",group:GROUPS[3],src:"coingecko",sym:"solana",name:"Solana",news:'"solana" crypto',cur:"$"},
+];
+let watch=store.get("watch",DEFAULT_WATCH);
+let keys=store.get("keys",{twelve:"",av:""});
+const state={view:"overview",sel:watch[0].id,series:{},analysis:{},news:{},errors:{}};
+
+// ---------- rate-limited queues per provider ----------
+function makeQueue(gapMs,conc=1){let chain=[],active=0,last=0;
+  const pump=async()=>{if(active>=conc||!chain.length)return;const job=chain.shift();active++;const wait=Math.max(0,last+gapMs-Date.now());last=Date.now()+wait;await new Promise(r=>setTimeout(r,wait));const {fn,res,rej}=job;try{res(await fn());}catch(e){rej(e);}finally{active--;pump();}};
+  return fn=>new Promise((res,rej)=>{chain.push({fn,res,rej});pump();});}
+const Q={twelve:makeQueue(8000),av:makeQueue(13000),cg:makeQueue(2500),gdelt:makeQueue(5500),fx:makeQueue(0,8)};
+async function getJSON(url){const r=await fetch(url);if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.json();}
+
+// ---------- price fetchers: return [[YYYY-MM-DD, close], ...] ascending ----------
+const fetchers={
+  async coingecko(a){
+    const j=await Q.cg(()=>getJSON(`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(a.sym)}/market_chart?vs_currency=usd&days=365&interval=daily`));
+    const m=new Map();for(const [t,p] of j.prices)m.set(new Date(t).toISOString().slice(0,10),p);return [...m.entries()];
+  },
+  async twelve(a){
+    if(!keys.twelve)throw new Error("Add a free Twelve Data key (API keys button) to load this.");
+    const j=await Q.twelve(()=>getJSON(`https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(a.sym)}&interval=1day&outputsize=600&apikey=${keys.twelve}`));
+    if(j.status==="error")throw new Error(j.message||"Twelve Data error");
+    return j.values.map(v=>[v.datetime.slice(0,10),+v.close]).reverse();
+  },
+  async av_brent(a){
+    if(!keys.av)throw new Error("Add a free Alpha Vantage key (API keys button) to load Brent.");
+    const j=await Q.av(()=>getJSON(`https://www.alphavantage.co/query?function=BRENT&interval=daily&apikey=${keys.av}`));
+    if(!j.data)throw new Error(j.Note||j.Information||j["Error Message"]||"Alpha Vantage returned no data (daily limit?)");
+    return j.data.filter(d=>d.value!=="."&&isFinite(+d.value)).slice(0,600).map(d=>[d.date,+d.value]).reverse();
+  },
+  async fx(a){
+    // Daily history from the free fawazahmed0 currency API, cached day by day.
+    const cur=a.sym.toLowerCase();const cache=store.get("fx_"+cur,{});
+    const days=[];const d=new Date();for(let k=0;k<240;k++){const ds=new Date(d.getTime()-k*864e5).toISOString().slice(0,10);days.push(ds);}
+    const missing=days.filter(ds=>cache[ds]==null);
+    await Promise.all(missing.map(ds=>Q.fx(async()=>{
+      const urls=[`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${ds}/v1/currencies/usd.min.json`,`https://${ds}.currency-api.pages.dev/v1/currencies/usd.min.json`];
+      for(const u of urls){try{const j=await getJSON(u);if(j.usd&&j.usd[cur]){cache[ds]=j.usd[cur];return;}}catch(e){}}
+      if(ds!==today())cache[ds]=0; // mark as unavailable so we don't refetch forever
+    })));
+    store.set("fx_"+cur,cache);
+    const out=Object.entries(cache).filter(([k,v])=>v>0).sort((x,y)=>x[0]<y[0]?-1:1);
+    if(!out.length)throw new Error("Currency API unreachable.");
+    return out;
+  },
+  async csv(a){const s=store.get("csv_"+a.id,null);if(!s)throw new Error("NEEDCSV");return s;}
+};
+
+async function loadPrices(a,force=false){
+  const c=store.get("px_"+a.id,null);
+  if(c&&!force&&(c.day===today()||a.src==="csv")){state.series[a.id]=c.data;return;}
+  try{const data=await fetchers[a.src](a);state.series[a.id]=data;delete state.errors[a.id];if(a.src!=="csv")store.set("px_"+a.id,{day:today(),data});}
+  catch(e){if(c)state.series[a.id]=c.data;state.errors[a.id]=e.message;}
+}
+function runAnalysis(a){
+  const s=state.series[a.id];if(!s){state.analysis[a.id]=null;return;}
+  state.analysis[a.id]=analyze(s.map(r=>r[0]),s.map(r=>r[1]));
+}
+
+// ---------- news ----------
+function gdeltTime(s){const m=s.match(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})/);return m?Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5]):Date.now();}
+async function loadNews(a,force=false){
+  const c=store.get("news_"+a.id,null);
+  if(c&&!force&&Date.now()-c.ts<3*36e5){state.news[a.id]=c;return;}
+  let items=[],source="",err="";
+  try{
+    const q=`(${a.news}) sourcelang:english`;
+    const j=await Q.gdelt(()=>getJSON(`https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(q)}&mode=artlist&format=json&maxrecords=40&timespan=7d&sort=datedesc`));
+    const seen=new Set();
+    items=(j.articles||[]).filter(x=>{const k=x.title.toLowerCase().slice(0,60);if(seen.has(k))return false;seen.add(k);return true;})
+      .map(x=>({title:x.title,url:x.url,src:x.domain,time:gdeltTime(x.seendate)}));
+    source="GDELT";
+  }catch(e){err="GDELT: "+e.message;}
+  if(!items.length&&keys.av&&(a.src==="twelve"||a.src==="coingecko")){
+    try{
+      const t=a.src==="coingecko"?`CRYPTO:${({bitcoin:"BTC",ethereum:"ETH",solana:"SOL"})[a.sym]||a.sym.toUpperCase()}`:a.sym.replace("/","");
+      const j=await Q.av(()=>getJSON(`https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=${encodeURIComponent(t)}&limit=40&apikey=${keys.av}`));
+      items=(j.feed||[]).map(x=>({title:x.title,url:x.url,src:x.source,time:gdeltTime(x.time_published)}));source="Alpha Vantage";
+    }catch(e){err+=" · AV: "+e.message;}
+  }
+  const rec={ts:Date.now(),items:items.slice(0,30),source,err,summary:newsSummary(items.slice(0,30))};
+  state.news[a.id]=rec;if(items.length)store.set("news_"+a.id,rec);
+}
+
+// ---------- formatting ----------
+const fmtP=(v,cur="")=>v==null?"—":cur+(v>=1000?v.toLocaleString(undefined,{maximumFractionDigits:2}):v>=1?v.toFixed(2):v.toPrecision(4));
+const fmtPct=v=>v==null?"—":(v>0?"+":"")+(v*100).toFixed(1)+"%";
+const cls=v=>v==null?"flat":v>0.0005?"up":v<-0.0005?"down":"flat";
+const ago=t=>{const h=(Date.now()-t)/36e5;return h<1?Math.max(1,Math.round(h*60))+"m ago":h<48?Math.round(h)+"h ago":Math.round(h/24)+"d ago";};
+function sigFor(a){const an=state.analysis[a.id];if(!an||!an.ok)return null;const n=state.news[a.id]||store.get("news_"+a.id,null);return signal(an,n&&n.summary);}
+function badge(sg){if(!sg)return '<span class="badge neu">No data</span>';const ic=sg.cls==="bull"?"▲":sg.cls==="bear"?"▼":"●";return `<span class="badge ${sg.cls}">${ic} ${sg.label} <span class="mono">${sg.score>0?"+":""}${sg.score}</span></span>`;}
+
+// ---------- render ----------
+function renderSide(){
+  $("#side").innerHTML=GROUPS.map(g=>{const items=watch.filter(a=>a.group===g);if(!items.length)return"";
+    return `<div class="group"><h3>${esc(g)}</h3>${items.map(a=>{const an=state.analysis[a.id];const sg=sigFor(a);
+      const col=sg?(sg.cls==="bull"?"var(--good)":sg.cls==="bear"?"var(--bad)":"var(--muted)"):"var(--axis)";
+      return `<div class="asset ${a.id===state.sel&&state.view==="detail"?"active":""}" data-id="${a.id}"><span class="dot" style="background:${col}"></span><span class="nm">${esc(a.name)}</span><span class="ch mono ${cls(an&&an.ok?an.chg1:null)}">${an&&an.ok?fmtPct(an.chg1):""}</span></div>`;}).join("")}</div>`;}).join("");
+  document.querySelectorAll(".asset").forEach(el=>el.onclick=()=>{state.sel=el.dataset.id;setView("detail");});
+}
+function renderOverview(){
+  const rows=watch.map(a=>{const an=state.analysis[a.id];const sg=sigFor(a);const ok=an&&an.ok;
+    return `<tr data-id="${a.id}"><td>${esc(a.name)}<div class="hint">${esc(a.group)}</div></td>
+      <td class="num mono">${ok?fmtP(an.last,a.cur):"—"}</td><td class="num mono ${cls(ok?an.chg5:null)}">${ok?fmtPct(an.chg5):"—"}</td>
+      <td class="num mono ${cls(ok?an.chg30:null)}">${ok?fmtPct(an.chg30):"—"}</td>
+      <td class="num mono">${ok?(an.pUp*100).toFixed(0)+"%":"—"}</td>
+      <td class="num mono">${ok&&an.bt.edge!=null?(an.bt.edge>0?"+":"")+(an.bt.edge*100).toFixed(1)+" pts":"—"}</td>
+      <td>${sg?badge(sg):`<span class="hint">${a.src==="csv"&&!state.series[a.id]?"Import CSV":esc(state.errors[a.id]||"Not loaded")}</span>`}</td></tr>`;}).join("");
+  const loaded=watch.map(a=>({a,sg:sigFor(a)})).filter(x=>x.sg);
+  const bull=loaded.filter(x=>x.sg.cls==="bull").length,bear=loaded.filter(x=>x.sg.cls==="bear").length;
+  $("#view").innerHTML=`
+  <div class="tiles" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="card tile"><div class="lbl">Assets with data</div><div class="val mono">${loaded.length} / ${watch.length}</div><div class="sub">Click an asset for the full read</div></div>
+    <div class="card tile"><div class="lbl">Bullish signals</div><div class="val mono up">▲ ${bull}</div><div class="sub">score ≥ +20</div></div>
+    <div class="card tile"><div class="lbl">Bearish signals</div><div class="val mono down">▼ ${bear}</div><div class="sub">score ≤ −20</div></div>
+  </div>
+  <div class="card"><h2>Watchlist</h2><p class="hint">P(up) is the model's probability the price is higher in ${H} sessions. Edge is how much better than "always guess the usual direction" the model did on the last 30% of history, which it was not trained on. A negative edge means don't trust it for that asset.</p>
+  <table><thead><tr><th>Asset</th><th class="num">Last</th><th class="num">5-day</th><th class="num">30-day</th><th class="num">P(up ${H}d)</th><th class="num">Backtest edge</th><th>Signal</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  document.querySelectorAll("tbody tr[data-id]").forEach(tr=>tr.onclick=()=>{state.sel=tr.dataset.id;setView("detail");});
+}
+let chart;
+function renderDetail(){
+  const a=watch.find(x=>x.id===state.sel)||watch[0];const an=state.analysis[a.id];const nw=state.news[a.id];
+  const head=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap"><h2 style="font-size:20px;margin:0">${esc(a.name)}</h2><span class="hint mono">${esc(a.sym)}</span>
+    ${a.src==="csv"?`<button class="btn small" id="btnCSV">Import / update CSV</button>`:""}
+    <button class="btn small" id="btnNews">Refresh news</button><button class="btn small" id="btnRemove">Remove</button><span class="grow"></span></div>`;
+  if(!an||!an.ok){
+    const msg=state.errors[a.id]==="NEEDCSV"||(a.src==="csv"&&!state.series[a.id])?`There is no free live API for NGX prices. Download ${esc(a.name)}'s daily history as a CSV (ngxgroup.com, Investing.com or stockanalysis.com) and import it. Six months or more works best.`:esc(an&&an.reason||state.errors[a.id]||"Loading…");
+    $("#view").innerHTML=head+`<div class="card empty">${msg}${a.src==="csv"?`<div style="margin-top:12px"><button class="btn primary" id="btnCSV2">Import CSV</button></div>`:""}</div>`+newsCard(a,nw);
+    wireDetail(a);return;
+  }
+  const sg=sigFor(a);const s=state.series[a.id];
+  const bt=an.bt;const edgeTxt=bt.edge==null?"Not enough history to backtest":`${(bt.hit*100).toFixed(0)}% vs ${(bt.base*100).toFixed(0)}% baseline`;
+  const pos=(sg.score+100)/2;
+  const why=explain(a,an,sg,nw);
+  $("#view").innerHTML=head+`
+  <div class="tiles">
+    <div class="card tile"><div class="lbl">Last close · ${esc(s[s.length-1][0])}</div><div class="val mono">${fmtP(an.last,a.cur)}</div><div class="sub mono ${cls(an.chg1)}">${fmtPct(an.chg1)} day · <span class="${cls(an.chg5)}">${fmtPct(an.chg5)}</span> 5d</div></div>
+    <div class="card tile"><div class="lbl">Signal</div><div style="margin-top:4px">${badge(sg)}</div><div class="meter"><b></b><i style="left:calc(${pos}% - 1px)"></i></div></div>
+    <div class="card tile"><div class="lbl">P(higher in ${H} sessions)</div><div class="val mono">${(an.pUp*100).toFixed(0)}%</div><div class="sub">technical model</div></div>
+    <div class="card tile"><div class="lbl">Model backtest</div><div class="val mono ${bt.edge==null?"flat":bt.edge>0?"up":"down"}">${bt.edge==null?"—":(bt.edge>0?"+":"")+(bt.edge*100).toFixed(1)+" pts"}</div><div class="sub">${edgeTxt}${bt.samples?` · ${bt.samples} tests`:""}</div></div>
+    <div class="card tile"><div class="lbl">10-session range (80%)</div><div class="val mono" style="font-size:17px">${fmtP(an.cone[9].lo,a.cur)} – ${fmtP(an.cone[9].hi,a.cur)}</div><div class="sub">volatility ${(an.annVol*100).toFixed(0)}%/yr</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h2>Price, trend and projected range</h2><p class="hint">Last 180 sessions, then a 10-session cone: the shaded band is where the price lands 8 times in 10 if recent volatility holds.</p>
+      <div class="chartwrap"><canvas id="cv" aria-label="Price chart"></canvas></div>
+      <div class="legend-note"><span style="--c:var(--s1)">Close</span><span style="--c:var(--s2)">20-day avg</span><span style="--c:var(--s3)">50-day avg</span><span style="--c:var(--s7)">Projection</span></div>
+    </div>
+    <div class="card"><h2>Why this signal</h2><ul class="why">${why.map(w=>`<li>${w}</li>`).join("")}</ul>
+      <h2 style="margin-top:16px">Indicators</h2>
+      <table class="ind"><tbody>
+      <tr><td>RSI (14)</td><td class="num mono">${an.rsiNow.toFixed(0)}</td><td class="hint">${an.rsiNow>70?"overbought":an.rsiNow<30?"oversold":"normal range"}</td></tr>
+      <tr><td>vs 20-day avg</td><td class="num mono ${cls(an.last/an.s20-1)}">${fmtPct(an.last/an.s20-1)}</td><td class="hint">short-term trend</td></tr>
+      <tr><td>vs 50-day avg</td><td class="num mono ${cls(an.last/an.s50-1)}">${fmtPct(an.last/an.s50-1)}</td><td class="hint">medium-term trend</td></tr>
+      <tr><td>MACD histogram</td><td class="num mono ${cls(an.macdNow)}">${an.macdNow>0?"+":"−"}</td><td class="hint">momentum ${an.macdNow>0?"building":"fading"}</td></tr>
+      <tr><td>30-day change</td><td class="num mono ${cls(an.chg30)}">${fmtPct(an.chg30)}</td><td></td></tr>
+      </tbody></table>
+    </div>
+  </div>
+  ${newsCard(a,nw)}`;
+  wireDetail(a);drawChart(a,an,s);
+}
+function explain(a,an,sg,nw){
+  const o=[];const bt=an.bt;
+  if(a.src==="fx")o.push(`For a rate quoted as naira (or other currency) per dollar, <b>bullish means the dollar gets dearer</b> and the local currency weakens.`);
+  if(bt.edge==null)o.push("Not enough history to test the model, so its vote counts for half.");
+  else if(bt.edge>0.03)o.push(`On unseen history the model called the ${H}-day direction right <b>${(bt.hit*100).toFixed(0)}%</b> of the time, beating the ${(bt.base*100).toFixed(0)}% baseline. It has had an edge here.`);
+  else if(bt.edge>0)o.push(`The model only just beat its baseline (${(bt.hit*100).toFixed(0)}% vs ${(bt.base*100).toFixed(0)}%), so its vote is scaled down.`);
+  else o.push(`<b>Caution:</b> on unseen history the model did no better than guessing the usual direction (${(bt.hit*100).toFixed(0)}% vs ${(bt.base*100).toFixed(0)}%), so its vote is mostly ignored.`);
+  const top=an.contrib.slice(0,2).map(c=>`${c.name} (${c.v>0?"pushes up":"pushes down"})`).join(" and ");
+  o.push(`The model's biggest drivers right now: ${top}.`);
+  o.push(an.last>an.s50?`Price is ${fmtPct(an.last/an.s50-1)} above its 50-day average, so the medium-term trend is up.`:`Price is ${fmtPct(an.last/an.s50-1)} below its 50-day average, so the medium-term trend is down.`);
+  if(an.rsiNow>70)o.push("RSI is above 70. After a run like this, pullbacks are common.");
+  if(an.rsiNow<30)o.push("RSI is below 30, so the asset is oversold and bounces are common, though weak assets can stay oversold.");
+  if(nw&&nw.summary&&nw.summary.count){const s=nw.summary;o.push(`News tone over the last 7 days is <b>${s.score>0.08?"positive":s.score<-0.08?"negative":"mixed"}</b>: ${s.pos} positive and ${s.neg} negative headlines out of ${s.count}.`);}
+  else o.push("No news was scored, so the signal uses price data only.");
+  return o;
+}
+function newsCard(a,nw){
+  let body;
+  if(!nw)body='<p class="hint">Loading headlines… (the news API allows one request every 5 seconds)</p>';
+  else if(!nw.items.length)body=`<p class="hint">No headlines found for <span class="mono">${esc(a.news)}</span> in the last 7 days.</p>${nw.err?`<div class="err">${esc(nw.err)}</div>`:""}`;
+  else body=`<ul class="news">${nw.items.map(it=>{const v=headlineScore(it.title);return `<li><span class="s mono ${v>0.05?"up":v<-0.05?"down":"flat"}">${v>0.05?"▲":v<-0.05?"▼":"●"} ${v>0?"+":""}${v.toFixed(1)}</span><div><a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a><div class="meta">${esc(it.src)} · ${ago(it.time)}</div></div></li>`;}).join("")}</ul>`;
+  return `<div class="card" style="margin-top:14px"><h2>News, last 7 days</h2><p class="hint">${nw&&nw.source?`From ${esc(nw.source)}, fetched ${ago(nw.ts)}. `:""}Each headline gets a tone score from −1 to +1 based on its wording. Recent headlines count more.</p>${body}</div>`;
+}
+function wireDetail(a){
+  const csvBtn=()=>openCSV(a);
+  $("#btnCSV")&&($("#btnCSV").onclick=csvBtn);$("#btnCSV2")&&($("#btnCSV2").onclick=csvBtn);
+  $("#btnNews").onclick=async()=>{setStatus("Fetching news…");await loadNews(a,true);setStatus("Ready");render();};
+  $("#btnRemove").onclick=()=>{if($("#btnRemove").dataset.sure){watch=watch.filter(x=>x.id!==a.id);store.set("watch",watch);state.sel=watch[0]?.id;setView("overview");}else{$("#btnRemove").dataset.sure=1;$("#btnRemove").textContent="Click again to remove";}};
+  if(!state.news[a.id]||Date.now()-state.news[a.id].ts>3*36e5){loadNews(a).then(()=>{if(state.sel===a.id&&state.view==="detail")render();});}
+}
+function drawChart(a,an,s){
+  if(chart)chart.destroy();
+  const N=Math.min(180,s.length);const tail=s.slice(-N);const off=s.length-N;
+  const labels=tail.map(r=>r[0]);const future=[];let d=new Date(s[s.length-1][0]+"T00:00:00Z");
+  const weekdaysOnly=a.src!=="coingecko"&&a.src!=="fx";
+  while(future.length<10){d=new Date(d.getTime()+864e5);const wd=d.getUTCDay();if(weekdaysOnly&&(wd===0||wd===6))continue;future.push(d.toISOString().slice(0,10));}
+  const L=labels.concat(future);const pad=new Array(10).fill(null);
+  const close=tail.map(r=>r[1]).concat(pad);
+  const s20=an.ind.s20.slice(off).concat(pad),s50=an.ind.s50.slice(off).concat(pad);
+  const pre=new Array(N-1).fill(null);
+  const mid=pre.concat([an.last],an.cone.map(x=>x.mid)),hi=pre.concat([an.last],an.cone.map(x=>x.hi)),lo=pre.concat([an.last],an.cone.map(x=>x.lo));
+  const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const base={pointRadius:0,pointHoverRadius:4,borderWidth:2,tension:0};
+  chart=new Chart($("#cv"),{type:"line",data:{labels:L,datasets:[
+    {...base,label:"80% range high",data:hi,borderWidth:0,backgroundColor:"rgba(144,133,233,.18)",fill:"+1"},
+    {...base,label:"80% range low",data:lo,borderWidth:0,fill:false},
+    {...base,label:"Projection",data:mid,borderColor:css("--s7"),borderDash:[5,4]},
+    {...base,label:"50-day avg",data:s50,borderColor:css("--s3"),borderWidth:1.5},
+    {...base,label:"20-day avg",data:s20,borderColor:css("--s2"),borderWidth:1.5},
+    {...base,label:"Close",data:close,borderColor:css("--s1")},
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},
+    plugins:{legend:{display:false},tooltip:{backgroundColor:"#0d0d0d",borderColor:"#383835",borderWidth:1,titleColor:"#f0efec",bodyColor:"#c3c2b7",
+      filter:i=>i.raw!=null,callbacks:{label:i=>` ${i.dataset.label}: ${fmtP(i.raw,a.cur)}`}}},
+    scales:{x:{ticks:{color:"#898781",maxTicksLimit:7,maxRotation:0},grid:{display:false},border:{color:"#383835"}},
+      y:{position:"right",ticks:{color:"#898781",callback:v=>fmtP(v)},grid:{color:"#2c2c2a"},border:{display:false}}}}});
+}
+function render(){renderSide();state.view==="overview"?renderOverview():renderDetail();
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.view===state.view));}
+function setView(v){state.view=v;render();}
+function setStatus(t){$("#status").textContent=t;}
+
+// ---------- dialogs ----------
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
+$("#btnSettings").onclick=()=>{$("#kTwelve").value=keys.twelve;$("#kAV").value=keys.av;$("#dlgSettings").showModal();};
+$("#saveKeys").onclick=()=>{keys={twelve:$("#kTwelve").value.trim(),av:$("#kAV").value.trim()};store.set("keys",keys);$("#dlgSettings").close();refreshAll(false);};
+$("#btnAdd").onclick=()=>{["#aSym","#aName","#aNews"].forEach(s=>$(s).value="");$("#dlgAdd").showModal();};
+$("#saveAsset").onclick=async()=>{
+  const sym=$("#aSym").value.trim();if(!sym)return;const name=$("#aName").value.trim()||sym;const src=$("#aSrc").value;
+  const a={id:(src+"_"+sym).toLowerCase().replace(/[^a-z0-9_]/g,"")+"_"+Date.now().toString(36),group:$("#aGroup").value,src,sym,name,news:$("#aNews").value.trim()||`"${name}"`,cur:src==="fx"?"":(/ngx/i.test($("#aGroup").value)?"₦":"$")};
+  watch.push(a);store.set("watch",watch);$("#dlgAdd").close();state.sel=a.id;setView("detail");
+  if(src!=="csv"){setStatus("Loading "+name+"…");await loadPrices(a,true);runAnalysis(a);setStatus("Ready");render();}else openCSV(a);
+};
+let csvAsset=null;
+function openCSV(a){csvAsset=a;$("#csvTitle").textContent="Import price history · "+a.name;$("#csvText").value="";$("#csvErr").textContent="";$("#csvFile").value="";$("#dlgCSV").showModal();}
+$("#csvFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("#csvText").value=r.result;};r.readAsText(f);};
+$("#saveCSV").onclick=()=>{
+  try{const rows=parseCSV($("#csvText").value);const old=store.get("csv_"+csvAsset.id,[]);const m=new Map(old);rows.forEach(([k,v])=>m.set(k,v));
+    const merged=[...m.entries()].sort((x,y)=>x[0]<y[0]?-1:1);store.set("csv_"+csvAsset.id,merged);state.series[csvAsset.id]=merged;delete state.errors[csvAsset.id];
+    runAnalysis(csvAsset);$("#dlgCSV").close();render();setStatus(`Imported ${rows.length} rows · ${merged.length} total`);}
+  catch(e){$("#csvErr").textContent=e.message;}
+};
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setView(t.dataset.view));
+$("#btnRefresh").onclick=()=>refreshAll(true);
+
+async function refreshAll(force){
+  let done=0;setStatus(`Loading prices 0/${watch.length}…`);
+  await Promise.all(watch.map(async a=>{await loadPrices(a,force);runAnalysis(a);done++;setStatus(`Loading prices ${done}/${watch.length}…`);renderSide();if(state.view==="overview")renderOverview();}));
+  setStatus(`Updated ${new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}`);render();
+}
+// boot: show cached data instantly, then fetch whatever is stale
+watch.forEach(a=>{const c=store.get("px_"+a.id,null)||(a.src==="csv"?{data:store.get("csv_"+a.id,null)}:null);if(c&&c.data){state.series[a.id]=c.data;runAnalysis(a);}const n=store.get("news_"+a.id,null);if(n)state.news[a.id]=n;});
+render();refreshAll(false);
+</script>
+</body>
+</html>
