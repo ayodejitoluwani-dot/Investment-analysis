@@ -1,0 +1,47 @@
+{
+  "groups": ["Nigerian stocks (NGX)", "Oil & FX", "US / global", "Crypto"],
+  "markets": {
+    "ngx": {
+      "label": "NGX large caps",
+      "source": "sa",
+      "basket": ["a/NGX-DANGCEM", "a/NGX-MTNN", "a/NGX-AIRTELAFRI", "a/NGX-BUACEMENT", "a/NGX-GTCO", "a/NGX-ZENITHBANK", "a/NGX-UBA", "a/NGX-ACCESSCORP", "a/NGX-SEPLAT", "a/NGX-NESTLE"]
+    },
+    "us": { "label": "S&P 500", "asset": "spy" },
+    "crypto": { "label": "Bitcoin", "asset": "btc" }
+  },
+  "assets": [
+    { "id": "dangcem", "name": "Dangote Cement", "group": "Nigerian stocks (NGX)", "source": "sa", "sym": "a/NGX-DANGCEM", "cur": "₦",
+      "horizon": 20, "limit": 0.10, "market": "ngx", "context": ["usdngn"], "news": "\"Dangote Cement\"" },
+    { "id": "mtnn", "name": "MTN Nigeria", "group": "Nigerian stocks (NGX)", "source": "sa", "sym": "a/NGX-MTNN", "cur": "₦",
+      "horizon": 20, "limit": 0.10, "market": "ngx", "context": ["usdngn"], "news": "\"MTN Nigeria\"" },
+    { "id": "gtco", "name": "GTCO (Guaranty Trust)", "group": "Nigerian stocks (NGX)", "source": "sa", "sym": "a/NGX-GTCO", "cur": "₦",
+      "horizon": 20, "limit": 0.10, "market": "ngx", "context": ["usdngn", "zenith"], "divSeason": [2, 3, 4], "news": "\"GTCO\" OR \"Guaranty Trust\"" },
+    { "id": "zenith", "name": "Zenith Bank", "group": "Nigerian stocks (NGX)", "source": "sa", "sym": "a/NGX-ZENITHBANK", "cur": "₦",
+      "horizon": 20, "limit": 0.10, "market": "ngx", "context": ["usdngn", "gtco"], "divSeason": [2, 3, 4], "news": "\"Zenith Bank\"" },
+    { "id": "seplat", "name": "Seplat Energy", "group": "Nigerian stocks (NGX)", "source": "sa", "sym": "a/NGX-SEPLAT", "cur": "₦",
+      "horizon": 20, "limit": 0.10, "market": "ngx", "context": ["usdngn", "brent"], "news": "\"Seplat\"" },
+
+    { "id": "brent", "name": "Brent crude", "group": "Oil & FX", "source": "yahoo", "sym": "BZ=F", "cur": "$",
+      "fallbacks": [{ "source": "sa", "sym": "e/BNO" }], "horizon": 5, "news": "\"Brent crude\" OR \"oil prices\" OR OPEC" },
+    { "id": "usdngn", "name": "USD/NGN (naira per $)", "group": "Oil & FX", "source": "yahoo", "sym": "NGN=X", "cur": "₦",
+      "horizon": 5, "context": ["brent"], "note": "Official-market rate. Bullish = dollar gets dearer, naira weakens.", "news": "naira (dollar OR CBN OR exchange rate)" },
+    { "id": "gold", "name": "Gold", "group": "Oil & FX", "source": "yahoo", "sym": "GC=F", "cur": "$",
+      "fallbacks": [{ "source": "sa", "sym": "e/GLD" }], "horizon": 5, "news": "\"gold price\"" },
+
+    { "id": "spy", "name": "S&P 500 (SPY)", "group": "US / global", "source": "sa", "sym": "e/SPY", "cur": "$",
+      "fallbacks": [{ "source": "yahoo", "sym": "SPY" }], "horizon": 5, "news": "\"S&P 500\" OR \"Wall Street\" stocks" },
+    { "id": "qqq", "name": "Nasdaq 100 (QQQ)", "group": "US / global", "source": "sa", "sym": "e/QQQ", "cur": "$",
+      "fallbacks": [{ "source": "yahoo", "sym": "QQQ" }], "horizon": 5, "market": "us", "news": "Nasdaq tech stocks" },
+    { "id": "aapl", "name": "Apple", "group": "US / global", "source": "sa", "sym": "s/AAPL", "cur": "$",
+      "fallbacks": [{ "source": "yahoo", "sym": "AAPL" }], "horizon": 5, "market": "us", "news": "Apple (iPhone OR shares OR stock)" },
+    { "id": "nvda", "name": "Nvidia", "group": "US / global", "source": "sa", "sym": "s/NVDA", "cur": "$",
+      "fallbacks": [{ "source": "yahoo", "sym": "NVDA" }], "horizon": 5, "market": "us", "news": "\"Nvidia\"" },
+
+    { "id": "btc", "name": "Bitcoin", "group": "Crypto", "source": "yahoo", "sym": "BTC-USD", "cur": "$",
+      "fallbacks": [{ "source": "coingecko", "sym": "bitcoin" }], "horizon": 5, "news": "bitcoin" },
+    { "id": "eth", "name": "Ethereum", "group": "Crypto", "source": "yahoo", "sym": "ETH-USD", "cur": "$",
+      "fallbacks": [{ "source": "coingecko", "sym": "ethereum" }], "horizon": 5, "market": "crypto", "news": "ethereum" },
+    { "id": "sol", "name": "Solana", "group": "Crypto", "source": "yahoo", "sym": "SOL-USD", "cur": "$",
+      "fallbacks": [{ "source": "coingecko", "sym": "solana" }], "horizon": 5, "market": "crypto", "news": "solana crypto" }
+  ]
+}

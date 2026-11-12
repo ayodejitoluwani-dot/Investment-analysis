@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signal Desk — Investment Signals</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--page:#0d0d0d;--surface:#1a1a19;--surface-2:#222220;--line:#2c2c2a;--axis:#383835;--ink:#f0efec;--ink-2:#c3c2b7;--muted:#898781;
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s7:#9085e9;--good:#0ca30c;--good-ink:#3fcf3f;--warn:#fab219;--bad:#d03b3b;--bad-ink:#ff7a7a}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 Inter,system-ui,sans-serif}
+button{font:inherit;color:inherit}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+a{color:var(--s1)}
+header{display:flex;align-items:center;gap:16px;padding:14px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--page);z-index:5}
+header h1{font-size:17px;margin:0;font-weight:700}
+header h1 span{color:var(--muted);font-weight:500}
+.grow{flex:1}
+.status{color:var(--muted);font-size:12.5px}
+.btn{background:var(--surface-2);border:1px solid var(--axis);border-radius:8px;padding:6px 11px;cursor:pointer;font-size:13px}
+.btn:hover{border-color:var(--muted)}
+.layout{display:grid;grid-template-columns:270px 1fr;min-height:calc(100vh - 58px)}
+aside{border-right:1px solid var(--line);padding:14px 10px;overflow:auto}
+.group h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:14px 10px 6px;font-weight:600}
+.asset{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer}
+.asset:hover{background:var(--surface)} .asset.active{background:var(--surface-2)}
+.asset .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asset .ch{font-size:12px}
+.up{color:var(--good-ink)} .down{color:var(--bad-ink)} .flat{color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+main{padding:20px 24px;overflow:auto;min-width:0}
+.tabs{display:flex;gap:6px;margin-bottom:16px}
+.tab{padding:6px 12px;border-radius:999px;border:1px solid var(--axis);cursor:pointer;background:transparent}
+.tab.on{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.tile .lbl{color:var(--muted);font-size:12px;margin-bottom:4px}
+.tile .val{font-size:22px;font-weight:600}
+.tile .sub{color:var(--ink-2);font-size:12px;margin-top:2px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-weight:600;font-size:13px;white-space:nowrap}
+.badge.bull{background:rgba(12,163,12,.18);color:var(--good-ink)}
+.badge.bear{background:rgba(208,59,59,.2);color:var(--bad-ink)}
+.badge.neu{background:rgba(137,135,129,.18);color:var(--ink-2)}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid var(--axis);color:var(--ink-2)}
+.pill.hi{border-color:var(--good);color:var(--good-ink)} .pill.lo{border-color:var(--warn);color:var(--warn)} .pill.no{border-color:var(--bad);color:var(--bad-ink)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;margin-top:14px}
+h2{font-size:15px;margin:0 0 4px}
+.hint{color:var(--muted);font-size:12.5px}
+.chartwrap{position:relative;height:340px;margin-top:8px}
+ul.why{margin:8px 0 0;padding-left:18px} ul.why li{margin:6px 0;color:var(--ink-2)}
+.news{list-style:none;margin:8px 0 0;padding:0;max-height:440px;overflow:auto}
+.news li{padding:9px 0;border-top:1px solid var(--line);display:flex;gap:10px}
+.news li:first-child{border-top:0}
+.news .s{flex:none;width:48px;text-align:right;font-size:12px;padding-top:2px}
+.news a{color:var(--ink);text-decoration:none} .news a:hover{text-decoration:underline}
+.news .meta{color:var(--muted);font-size:11.5px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-size:12px}
+.num{text-align:right}
+tbody.click tr{cursor:pointer} tbody.click tr:hover{background:var(--surface-2)}
+.tablewrap{overflow:auto}
+.meter{height:6px;border-radius:3px;background:var(--line);position:relative;margin-top:8px}
+.meter i{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;background:var(--ink)}
+.meter b{position:absolute;left:50%;top:-2px;width:1px;height:10px;background:var(--muted)}
+.banner{border:1px solid var(--warn);background:rgba(250,178,25,.08);color:var(--ink);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.empty{padding:30px;text-align:center;color:var(--ink-2)}
+.legend-note{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin-top:6px}
+.legend-note span::before{content:"";display:inline-block;width:14px;height:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px;margin-top:8px}
+.kv div:nth-child(odd){color:var(--muted)}
+.disclaimer{color:var(--muted);font-size:12px;margin-top:22px;max-width:900px}
+@media (max-width:1050px){.layout{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line)}.tiles{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Signal Desk <span>· investment signals</span></h1>
+  <div class="grow"></div>
+  <span class="status" id="status">Loading…</span>
+  <button class="btn" id="btnReload">Reload</button>
+</header>
+<div class="layout">
+  <aside id="side"></aside>
+  <main>
+    <div class="tabs">
+      <button class="tab on" data-view="overview">Overview</button>
+      <button class="tab" data-view="detail">Asset detail</button>
+      <button class="tab" data-view="track">Track record</button>
+    </div>
+    <section id="view"><div class="empty">Loading data…</div></section>
+    <p class="disclaimer">Signal Desk shows statistical signals, not financial advice. Every model is tested on years of history it was not trained on, and its live calls are logged and scored in Track record. Even a model with a past edge can stop working, so size positions as if any signal could be wrong.</p>
+  </main>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtP=(v,cur="")=>v==null||!isFinite(v)?"—":cur+(Math.abs(v)>=1000?v.toLocaleString(undefined,{maximumFractionDigits:2}):Math.abs(v)>=1?v.toFixed(2):v.toPrecision(4));
+const fmtPct=(v,d=1)=>v==null||!isFinite(v)?"—":(v>0?"+":"")+(v*100).toFixed(d)+"%";
+const pts=v=>v==null?"—":(v>0?"+":"")+(v*100).toFixed(1)+" pts";
+const cls=v=>v==null?"flat":v>0.0005?"up":v<-0.0005?"down":"flat";
+const ago=t=>{const h=(Date.now()-t)/36e5;return h<1?Math.max(1,Math.round(h*60))+"m ago":h<48?Math.round(h)+"h ago":Math.round(h/24)+"d ago";};
+const confPill=c=>`<span class="pill ${c==="High"?"hi":c==="Low"?"lo":c==="None"?"no":""}">${({High:"Proven edge",Low:"Weak edge",None:"No edge",Untested:"Untested"})[c]||esc(c)}</span>`;
+function badge(sg){if(!sg)return '<span class="badge neu">No data</span>';const ic=sg.cls==="bull"?"▲":sg.cls==="bear"?"▼":"●";return `<span class="badge ${sg.cls}">${ic} ${sg.label} <span class="mono">${sg.score>0?"+":""}${sg.score}</span></span>`;}
+
+const state={view:"overview",sel:null,data:null,preds:[]};
+let hashView=location.hash.slice(1);
+
+async function load(){
+  $("#status").textContent="Loading…";
+  try{
+    const [s,p]=await Promise.all([fetch("data/signals.json?"+Date.now()).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json();}),fetch("data/predictions.json?"+Date.now()).then(r=>r.ok?r.json():[]).catch(()=>[])]);
+    state.data=s;state.preds=p;state.sel=state.sel||s.assets.find(a=>a.ok)?.id||s.assets[0]?.id;
+    if(hashView&&s.assets.some(a=>a.id===hashView)){state.sel=hashView;state.view="detail";}
+    $("#status").textContent="Data from "+new Date(s.updated).toLocaleString([], {weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+  }catch(e){
+    $("#view").innerHTML=`<div class="card empty"><b>No data yet.</b><br><br>The data file <span class="mono">data/signals.json</span> isn't there yet (${esc(e.message)}).<br>In your GitHub repo, open <b>Actions → Update Signal Desk data → Run workflow</b>. It takes about 5 minutes, then reload this page.<br><br><span class="hint">Opened this file straight from your computer? It needs to be served from GitHub Pages to read its data.</span></div>`;
+    $("#status").textContent="No data";return;
+  }
+  render();
+}
+
+function banner(){
+  const d=state.data;const ageH=(Date.now()-Date.parse(d.updated))/36e5;
+  const failed=d.assets.filter(a=>!a.ok);
+  let b="";
+  if(ageH>80)b+=`<div class="banner">⚠ The data hasn't updated for ${Math.round(ageH/24)} days. Check <b>Actions</b> in your GitHub repo for a failed run.</div>`;
+  if(failed.length)b+=`<div class="banner">⚠ ${failed.length} asset${failed.length>1?"s":""} couldn't update last run: ${failed.map(a=>esc(a.name)).join(", ")}. Open one for the reason.</div>`;
+  return b;
+}
+
+function renderSide(){
+  const d=state.data;
+  $("#side").innerHTML=d.groups.map(g=>{const items=d.assets.filter(a=>a.group===g);if(!items.length)return"";
+    return `<div class="group"><h3>${esc(g)}</h3>${items.map(a=>{const col=!a.ok?"var(--axis)":a.signal.cls==="bull"?"var(--good)":a.signal.cls==="bear"?"var(--bad)":"var(--muted)";
+      return `<div class="asset ${a.id===state.sel&&state.view==="detail"?"active":""}" data-id="${a.id}"><span class="dot" style="background:${col}"></span><span class="nm">${esc(a.name)}</span><span class="ch mono ${cls(a.ok?a.chg1:null)}">${a.ok?fmtPct(a.chg1):"!"}</span></div>`;}).join("")}</div>`;}).join("");
+  document.querySelectorAll(".asset").forEach(el=>el.onclick=()=>{state.sel=el.dataset.id;setView("detail");});
+}
+
+function renderOverview(){
+  const d=state.data;const ok=d.assets.filter(a=>a.ok);
+  const bull=ok.filter(a=>a.signal.cls==="bull").length,bear=ok.filter(a=>a.signal.cls==="bear").length,hi=ok.filter(a=>a.confidence==="High").length;
+  const scored=state.preds.filter(p=>p.correct!=null),hits=scored.filter(p=>p.correct).length;
+  const rows=d.assets.map(a=>!a.ok?`<tr data-id="${a.id}"><td>${esc(a.name)}<div class="hint">${esc(a.group)}</div></td><td colspan="7" class="hint">${esc(a.reason)}</td></tr>`:
+   `<tr data-id="${a.id}"><td>${esc(a.name)}<div class="hint">${esc(a.group)}${a.illiquid?' · <span style="color:var(--warn)">thin trading</span>':""}</div></td>
+    <td class="num mono">${fmtP(a.last,a.cur)}</td><td class="num mono ${cls(a.chg5)}">${fmtPct(a.chg5)}</td><td class="num mono ${cls(a.chg30)}">${fmtPct(a.chg30)}</td>
+    <td class="num mono">${(a.pUp*100).toFixed(0)}% <span class="hint">/${a.H}d</span></td>
+    <td class="num mono ${a.bt.edge>0?"up":"down"}">${pts(a.bt.edge)}</td><td>${confPill(a.confidence)}</td><td>${badge(a.signal)}</td></tr>`).join("");
+  $("#view").innerHTML=banner()+`
+  <div class="tiles" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+    <div class="card tile"><div class="lbl">Bullish signals</div><div class="val mono up">▲ ${bull}</div><div class="sub">score +20 or higher</div></div>
+    <div class="card tile"><div class="lbl">Bearish signals</div><div class="val mono down">▼ ${bear}</div><div class="sub">score −20 or lower</div></div>
+    <div class="card tile"><div class="lbl">Assets where the model has an edge</div><div class="val mono">${hi} / ${ok.length}</div><div class="sub">"High confidence" in testing</div></div>
+    <div class="card tile"><div class="lbl">Live calls scored</div><div class="val mono">${scored.length?Math.round(hits/scored.length*100)+"%":"—"}</div><div class="sub">${scored.length?`${hits} right of ${scored.length}`:"scores appear once calls mature"}</div></div>
+  </div>
+  <div class="card"><h2>Watchlist</h2><p class="hint">P(up) is the model's chance the price is higher after the horizon: 20 trading days for NGX stocks, 5 for everything else. Edge is how much better than always guessing the usual direction the model did over years of rolling tests on data it hadn't seen.</p>
+  <div class="tablewrap"><table><thead><tr><th>Asset</th><th class="num">Last</th><th class="num">5-day</th><th class="num">1-month</th><th class="num">P(up)</th><th class="num">Tested edge</th><th>Trust</th><th>Signal</th></tr></thead><tbody class="click">${rows}</tbody></table></div></div>`;
+  document.querySelectorAll("tbody.click tr[data-id]").forEach(tr=>tr.onclick=()=>{state.sel=tr.dataset.id;setView("detail");});
+}
+
+function explain(a){
+  const o=[];const bt=a.bt;
+  if(a.note)o.push(esc(a.note));
+  if(a.confidence==="High")o.push(`<b>The model has earned some trust here.</b> Across ${bt.n} out-of-sample calls (${bt.from} → ${bt.to}) it was right ${(bt.hit*100).toFixed(0)}% of the time vs ${(bt.base*100).toFixed(0)}% for always guessing the usual direction, and it beat that baseline in ${Math.round(bt.stability*100)}% of 6-month periods.`);
+  else if(a.confidence==="Low")o.push(`<b>Weak edge.</b> In rolling tests it was right ${(bt.hit*100).toFixed(0)}% of the time vs a ${(bt.base*100).toFixed(0)}% baseline, but it only beat the baseline in ${bt.stability!=null?Math.round(bt.stability*100)+"%":"some"} of 6-month periods. Its vote counts for half.`);
+  else if(a.confidence==="None")o.push(`<b>No edge.</b> In rolling tests the model did no better than always guessing the usual direction (${(bt.hit*100).toFixed(0)}% vs ${(bt.base*100).toFixed(0)}%), so its vote is mostly ignored. The signal here is mainly trend and news, and it is capped at ±45.`);
+  if(bt.confHit!=null&&bt.confN>30)o.push(`When the model was fairly sure (P(up) above 60% or below 40%), it was right ${(bt.confHit*100).toFixed(0)}% of the time over ${bt.confN} calls.`);
+  if(a.contrib?.length)o.push(`Biggest drivers right now: ${a.contrib.slice(0,3).map(c=>`${esc(c.name)} <span class="${c.v>0?"up":"down"}">${c.v>0?"↑":"↓"}</span>`).join(", ")}.`);
+  o.push(a.gap50>0?`Price is ${fmtPct(a.gap50)} above its 50-day average, so the medium-term trend is up.`:`Price is ${fmtPct(a.gap50)} below its 50-day average, so the medium-term trend is down.`);
+  if(a.illiquid)o.push(`<span style="color:var(--warn)">Thin trading:</span> the price only moved on ${Math.round(a.liq*20)} of the last 20 sessions, so the signal is halved.`);
+  if(a.rsi>70)o.push("RSI is above 70. After a run like this, pullbacks are common.");
+  if(a.rsi<30)o.push("RSI is below 30, so the asset is oversold and bounces are common, though weak assets can stay oversold.");
+  const ns=a.news?.summary;
+  if(ns?.count>=3)o.push(`News tone over the last 7 days is <b>${ns.score>0.08?"positive":ns.score<-0.08?"negative":"mixed"}</b>: ${ns.pos} positive and ${ns.neg} negative headlines out of ${ns.count}.`);
+  else o.push("Too few headlines this week to count news in the signal.");
+  if(a.live?.n)o.push(`Live track record so far: ${a.live.hits} right of ${a.live.n} matured calls.`);
+  return o;
+}
+
+let chart;
+function renderDetail(){
+  const a=state.data.assets.find(x=>x.id===state.sel)||state.data.assets[0];
+  history.replaceState(null,"","#"+a.id);
+  const head=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap"><h2 style="font-size:20px;margin:0">${esc(a.name)}</h2><span class="hint mono">${esc(a.sym)}</span>${a.ok?confPill(a.confidence):""}</div>`;
+  if(!a.ok){$("#view").innerHTML=head+`<div class="card empty">${esc(a.reason)}${a.status&&!a.status.ok?`<div class="hint" style="margin-top:8px">${esc(a.status.error||"")}</div>`:""}</div>`+newsCard(a);return;}
+  const sg=a.signal,bt=a.bt,f=a.adjFactor||1;const end=a.cone[a.cone.length-1];
+  $("#view").innerHTML=banner()+head+`
+  <div class="tiles">
+    <div class="card tile"><div class="lbl">Last close · ${esc(a.lastDate)}</div><div class="val mono">${fmtP(a.last,a.cur)}</div><div class="sub mono"><span class="${cls(a.chg1)}">${fmtPct(a.chg1)}</span> day · <span class="${cls(a.chg5)}">${fmtPct(a.chg5)}</span> 5d</div></div>
+    <div class="card tile"><div class="lbl">Signal</div><div style="margin-top:4px">${badge(sg)}</div><div class="meter"><b></b><i style="left:calc(${(sg.score+100)/2}% - 1px)"></i></div></div>
+    <div class="card tile"><div class="lbl">P(higher in ${a.H} sessions)</div><div class="val mono">${(a.pUp*100).toFixed(0)}%</div><div class="sub">model trained on ${esc(bt.from?.slice(0,4)||"")}–now</div></div>
+    <div class="card tile"><div class="lbl">Tested edge</div><div class="val mono ${bt.edge>0?"up":"down"}">${pts(bt.edge)}</div><div class="sub">${bt.hit!=null?`${(bt.hit*100).toFixed(0)}% vs ${(bt.base*100).toFixed(0)}% · ${bt.n} calls`:"not enough history"}</div></div>
+    <div class="card tile"><div class="lbl">${a.H}-session range (80%)</div><div class="val mono" style="font-size:16px">${fmtP(end[1]*f,a.cur)} – ${fmtP(end[2]*f,a.cur)}</div><div class="sub">volatility ${(a.annVol*100).toFixed(0)}%/yr</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h2>Price, trend and projected range</h2><p class="hint">The last year of prices, adjusted for dividends and splits, then a ${a.H}-session cone. The shaded band is where the price lands 8 times in 10 if recent volatility holds.</p>
+      <div class="chartwrap"><canvas id="cv" aria-label="Price chart with moving averages and projection"></canvas></div>
+      <div class="legend-note"><span style="--c:var(--s1)">Close</span><span style="--c:var(--s2)">20-day avg</span><span style="--c:var(--s3)">50-day avg</span><span style="--c:var(--s7)">Projection</span></div></div>
+    <div class="card"><h2>Why this signal</h2><ul class="why">${explain(a).map(w=>`<li>${w}</li>`).join("")}</ul>
+      <h2 style="margin-top:16px">Model test details</h2>
+      <div class="kv mono">
+        <div>Test period</div><div>${esc(bt.from||"—")} → ${esc(bt.to||"—")}</div>
+        <div>Out-of-sample calls</div><div>${bt.n??"—"}</div>
+        <div>Beat baseline in</div><div>${bt.stability!=null?Math.round(bt.stability*100)+"% of "+bt.chunks+" half-years":"—"}</div>
+        <div>Probability error</div><div>${bt.brier!=null?`${bt.brier.toFixed(3)} vs ${bt.brierBase.toFixed(3)} naive ${bt.brier<bt.brierBase?'<span class="up">better</span>':'<span class="down">worse</span>'}`:"—"}</div>
+        <div>RSI (14)</div><div>${a.rsi.toFixed(0)}</div>
+        <div>Data source</div><div>${esc(a.status?.via||"")}</div>
+      </div></div>
+  </div>${newsCard(a)}`;
+  drawChart(a);
+}
+function newsCard(a){
+  const n=a.news;let body;
+  if(!n||!n.items?.length)body=`<p class="hint">No headlines found this week.${n?.errors?.length?" ("+esc(n.errors.join("; "))+")":""}</p>`;
+  else body=`<ul class="news">${n.items.map(it=>`<li><span class="s mono ${it.score>0.05?"up":it.score<-0.05?"down":"flat"}">${it.score>0.05?"▲":it.score<-0.05?"▼":"●"} ${it.score>0?"+":""}${it.score.toFixed(1)}</span><div><a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a><div class="meta">${esc(it.src)} · ${ago(it.time)}</div></div></li>`).join("")}</ul>`;
+  return `<div class="card" style="margin-top:14px"><h2>News, last 7 days</h2><p class="hint">From Google News (Nigeria edition) and GDELT${n?.carried?". The latest fetch failed, so these are from the previous run":""}. Each headline gets a tone score from −1 to +1 based on its wording.</p>${body}</div>`;
+}
+function drawChart(a){
+  if(chart)chart.destroy();
+  if(typeof Chart==="undefined"){$("#cv").parentElement.innerHTML='<div class="empty">The chart library didn\'t load.</div>';return;}
+  const f=a.adjFactor||1,ch=a.chart,N=ch.t.length,H=a.cone.length;
+  const future=[];let d=new Date(ch.t[N-1]+"T00:00:00Z");const wk=a.group!=="Crypto";
+  while(future.length<H){d=new Date(d.getTime()+864e5);const w=d.getUTCDay();if(wk&&(w===0||w===6))continue;future.push(d.toISOString().slice(0,10));}
+  const pad=new Array(H).fill(null),pre=new Array(N-1).fill(null),lastC=ch.c[N-1]*f;
+  const S=arr=>arr.map(v=>v==null?null:v*f);
+  const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const base={pointRadius:0,pointHoverRadius:4,borderWidth:2,tension:0};
+  chart=new Chart($("#cv"),{type:"line",data:{labels:ch.t.concat(future),datasets:[
+    {...base,label:"80% range high",data:pre.concat([lastC],a.cone.map(x=>x[2]*f)),borderWidth:0,backgroundColor:"rgba(144,133,233,.18)",fill:"+1"},
+    {...base,label:"80% range low",data:pre.concat([lastC],a.cone.map(x=>x[1]*f)),borderWidth:0,fill:false},
+    {...base,label:"Projection",data:pre.concat([lastC],a.cone.map(x=>x[0]*f)),borderColor:css("--s7"),borderDash:[5,4]},
+    {...base,label:"50-day avg",data:S(ch.s50).concat(pad),borderColor:css("--s3"),borderWidth:1.5},
+    {...base,label:"20-day avg",data:S(ch.s20).concat(pad),borderColor:css("--s2"),borderWidth:1.5},
+    {...base,label:"Close",data:S(ch.c).concat(pad),borderColor:css("--s1")}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:"index",intersect:false},
+      plugins:{legend:{display:false},tooltip:{backgroundColor:"#0d0d0d",borderColor:"#383835",borderWidth:1,titleColor:"#f0efec",bodyColor:"#c3c2b7",filter:i=>i.raw!=null,callbacks:{label:i=>` ${i.dataset.label}: ${fmtP(i.raw,a.cur)}`}}},
+      scales:{x:{ticks:{color:"#898781",maxTicksLimit:7,maxRotation:0},grid:{display:false},border:{color:"#383835"}},y:{position:"right",ticks:{color:"#898781",callback:v=>fmtP(v)},grid:{color:"#2c2c2a"},border:{display:false}}}}});
+}
+
+function renderTrack(){
+  const d=state.data,P=state.preds;const byId=Object.fromEntries(d.assets.map(a=>[a.id,a]));
+  const scored=P.filter(p=>p.correct!=null);
+  const per=d.assets.map(a=>{const s=scored.filter(p=>p.id===a.id);const pend=P.filter(p=>p.id===a.id&&!p.outcome).length;const h=s.filter(p=>p.correct).length;
+    return `<tr><td>${esc(a.name)}</td><td class="num mono">${s.length}</td><td class="num mono">${s.length?Math.round(h/s.length*100)+"%":"—"}</td><td class="num mono">${pend}</td><td>${a.ok?confPill(a.confidence):""}</td></tr>`;}).join("");
+  const recent=[...P].sort((x,y)=>x.d<y.d?1:-1).slice(0,150).map(p=>{const a=byId[p.id];return `<tr><td class="mono">${esc(p.d)}</td><td>${esc(a?.name||p.id)}</td><td class="num mono">${(p.p*100).toFixed(0)}%</td><td class="num mono">${p.score>0?"+":""}${p.score}</td><td class="mono">${p.H}d</td>
+    <td>${!p.outcome?'<span class="hint">waiting until '+esc(p.H)+' sessions pass</span>':`<span class="mono ${cls(p.ret)}">${fmtPct(p.ret)}</span> by ${esc(p.end)}`}</td>
+    <td>${p.correct==null?(p.outcome==="flat"?'<span class="hint">flat</span>':""):p.correct?'<span class="up">✓ right</span>':'<span class="down">✗ wrong</span>'}</td></tr>`;}).join("");
+  $("#view").innerHTML=`<div class="card"><h2>Live track record</h2><p class="hint">Every update logs each asset's call, and the call is scored once its horizon has passed. A call counts as right when P(up) was above 50% and the price rose, or below 50% and it fell. These are real out-of-sample results, the most honest measure of whether the model works.</p>
+    <div class="tablewrap"><table><thead><tr><th>Asset</th><th class="num">Scored</th><th class="num">Right</th><th class="num">Waiting</th><th>Tested trust</th></tr></thead><tbody>${per}</tbody></table></div></div>
+    <div class="card" style="margin-top:14px"><h2>Recent calls</h2>${P.length?`<div class="tablewrap"><table><thead><tr><th>Date</th><th>Asset</th><th class="num">P(up)</th><th class="num">Signal</th><th>Horizon</th><th>Result</th><th></th></tr></thead><tbody>${recent}</tbody></table></div>`:'<p class="hint">No calls logged yet.</p>'}</div>`;
+}
+
+function render(){if(!state.data)return;renderSide();({overview:renderOverview,detail:renderDetail,track:renderTrack})[state.view]();
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.view===state.view));
+  if(state.view!=="detail")history.replaceState(null,"",location.pathname);}
+function setView(v){state.view=v;render();window.scrollTo(0,0);}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setView(t.dataset.view));
+$("#btnReload").onclick=load;
+load();
+</script>
+</body>
+</html>
